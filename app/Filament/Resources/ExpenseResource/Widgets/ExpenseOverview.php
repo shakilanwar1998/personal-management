@@ -22,12 +22,12 @@ class ExpenseOverview extends ChartWidget
 
         $monthlyData = [];
         foreach ($records as $expense) {
-            $month = $expense->created_at->format('M');
+            $month = $expense->date->format('M');
             $monthlyData[$month][] = $expense->amount;
         }
 
         foreach ($lifeTimeInvests as $expense) {
-            $month = $expense->created_at->format('M');
+            $month = $expense->date->format('M');
             $monthlyData[$month][] = $expense->amount;
         }
 
