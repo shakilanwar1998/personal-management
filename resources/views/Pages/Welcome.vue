@@ -14,7 +14,7 @@ export default {
             <Nav/>
         </header>
 
-        <h1>Home Page</h1>
+        <h1 class="heading">Home Page</h1>
         <article>
             <slot />
         </article>

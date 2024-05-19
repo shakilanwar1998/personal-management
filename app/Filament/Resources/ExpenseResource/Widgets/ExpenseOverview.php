@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ExpenseResource\Widgets;
 
 use App\Models\Expense;
+use App\Models\Investment;
 use Filament\Widgets\ChartWidget;
 
 class ExpenseOverview extends ChartWidget
@@ -15,10 +16,19 @@ class ExpenseOverview extends ChartWidget
         self::$heading = $currentYear;
         $records = Expense::whereYear('date', $currentYear)->get();
 
+        $lifeTimeInvests = Investment::where([
+            'is_lifetime' => true
+        ])->get();
+
         $monthlyData = [];
         foreach ($records as $expense) {
-            $month = $expense->created_at->format('M'); // Assuming created_at is a timestamp field
-            $monthlyData[$month][] = $expense->amount; // Replace 'amount' with the actual field containing expense data
+            $month = $expense->created_at->format('M');
+            $monthlyData[$month][] = $expense->amount;
+        }
+
+        foreach ($lifeTimeInvests as $expense) {
+            $month = $expense->created_at->format('M');
+            $monthlyData[$month][] = $expense->amount;
         }
 
         $data = array_map(function ($expenses) {
