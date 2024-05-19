@@ -4,10 +4,13 @@ namespace App\Filament\Resources\ExpenseResource\Widgets;
 
 use App\Models\Expense;
 use App\Models\Investment;
+use App\Services\Traits\DateFormat;
 use Filament\Widgets\ChartWidget;
 
 class ExpenseOverview extends ChartWidget
 {
+    use DateFormat;
+
     protected static ?string $heading = 'Chart';
 
     protected function getData(): array
@@ -22,12 +25,12 @@ class ExpenseOverview extends ChartWidget
 
         $monthlyData = [];
         foreach ($records as $expense) {
-            $month = $expense->date->format('M');
+            $month = $this->formatMonth($expense->date);
             $monthlyData[$month][] = $expense->amount;
         }
 
         foreach ($lifeTimeInvests as $expense) {
-            $month = $expense->date->format('M');
+            $month = $this->formatMonth($expense->date);
             $monthlyData[$month][] = $expense->amount;
         }
 
@@ -47,6 +50,7 @@ class ExpenseOverview extends ChartWidget
             'labels' => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
         ];
     }
+
 
 
     protected function getType(): string
