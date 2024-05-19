@@ -19,7 +19,7 @@ class ExpenseOverview extends ChartWidget
         self::$heading = $currentYear;
         $records = Expense::whereYear('date', $currentYear)->get();
 
-        $lifeTimeInvests = Investment::where([
+        $lifeTimeInvests = Investment::whereYear('date', $currentYear)->where([
             'is_lifetime' => true
         ])->get();
 
