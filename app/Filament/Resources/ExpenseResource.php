@@ -13,6 +13,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -96,6 +97,21 @@ class ExpenseResource extends Resource
                                 $data['date_until'],
                                 fn (Builder $query, $date): Builder => $query->whereDate('date', '<=', $date),
                             );
+                    }),
+                SelectFilter::make('category_id')
+                    ->label('Category')
+                    ->options(function (){
+                        $options = array();
+                        $parents = ExpenseCategory::where(['parent' => 0])->get();
+
+                        foreach ($parents as $parent) {
+                            $options[$parent->id] = $parent->name;
+                            $categories = ExpenseCategory::where(['parent' => $parent->id])->get();
+                            foreach ($categories as $category) {
+                                $options[$category->id] = $parent->name.' > '.$category->name;
+                            }
+                        }
+                        return $options;
                     })
             ])
             ->actions([
