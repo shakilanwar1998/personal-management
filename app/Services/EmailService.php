@@ -84,14 +84,8 @@ class EmailService
                     'mail.from.name' => $fromName ?? 'Okkhor.com Ltd.',
                 ]);
 
-                // Create mail data
-                $mailData = [
-                    'subject' => $subject,
-                    'body' => $body,
-                ];
-
-                // Send email
-                Mail::send('emails.generic', $mailData, function ($message) use ($to, $subject, $from, $fromName, $attachments) {
+                // Send email with raw body content
+                Mail::raw($body, function ($message) use ($to, $subject, $from, $fromName, $attachments) {
                     $message->to($to)
                             ->subject($subject);
 
