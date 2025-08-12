@@ -91,7 +91,7 @@ Test the SMTP configuration by sending a test email to the configured email addr
     "success": true,
     "message": "SMTP configuration test successful",
     "data": {
-        "smtp_host": "mail.mysecurecloudhost.com",
+        "smtp_host": "s1310.sgp1.mysecurecloudhost.com",
         "smtp_port": "465",
         "email_user": "noreply@email.okkhor.com",
         "test_sent_to": "noreply@email.okkhor.com"
@@ -126,7 +126,7 @@ Test the SMTP configuration by sending a test email to the configured email addr
 
 The API uses the following SMTP configuration:
 
-- **Host**: `mail.mysecurecloudhost.com`
+- **Host**: `s1310.sgp1.mysecurecloudhost.com`
 - **Port**: `465`
 - **Encryption**: `SSL`
 - **Username**: `noreply@email.okkhor.com`
@@ -137,7 +137,7 @@ The API uses the following SMTP configuration:
 Make sure these environment variables are set in your `.env` file:
 
 ```env
-SMTP_HOST=mail.mysecurecloudhost.com
+SMTP_HOST=s1310.sgp1.mysecurecloudhost.com
 SMTP_PORT=465
 EMAIL_USER=noreply@email.okkhor.com
 EMAIL_PASSWORD={Oq?t,6.S9#^uv67
