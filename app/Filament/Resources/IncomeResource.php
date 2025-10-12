@@ -6,9 +6,11 @@ use App\Filament\Resources\IncomeResource\Pages;
 use App\Filament\Resources\IncomeResource\RelationManagers;
 use App\Models\Income;
 use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -17,7 +19,7 @@ class IncomeResource extends Resource
 {
     protected static ?string $model = Income::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-arrow-trending-up';
 
     protected static ?string $navigationGroup = 'Account';
 
@@ -29,7 +31,19 @@ class IncomeResource extends Resource
                 Forms\Components\TextInput::make('amount')
                     ->required()
                     ->numeric()
-                    ->default(0.00),
+                    ->minValue(0.01)
+                    ->default(0.00)
+                    ->prefix('৳'),
+                Forms\Components\Select::make('income_source')
+                    ->label('Income Source')
+                    ->options([
+                        'Salary' => 'Salary',
+                        'Remittance' => 'Remittance',
+                        'Business' => 'Business',
+                        'Gifts' => 'Gifts',
+                    ])
+                    ->default('Salary')
+                    ->required(),
                 Forms\Components\TextInput::make('remarks')
                     ->maxLength(255),
             ]);
@@ -52,12 +66,57 @@ class IncomeResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('amount')
                     ->numeric()
+                    ->formatStateUsing(fn ($state) => number_format($state, 2))
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('income_source')
+                    ->label('Income Source')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'Salary' => 'success',
+                        'Remittance' => 'info',
+                        'Business' => 'warning',
+                        'Gifts' => 'gray',
+                        default => 'gray',
+                    })
                     ->sortable(),
                 Tables\Columns\TextColumn::make('remarks')
                     ->searchable(),
             ])
             ->filters([
-                //
+                Filter::make('date')
+                    ->form([
+                        DatePicker::make('date_from'),
+                        DatePicker::make('date_until'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['date_from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('date', '>=', $date),
+                            )
+                            ->when(
+                                $data['date_until'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('date', '<=', $date),
+                            );
+                    }),
+                Filter::make('income_source')
+                    ->form([
+                        Forms\Components\Select::make('income_source')
+                            ->label('Income Source')
+                            ->options([
+                                'Salary' => 'Salary',
+                                'Remittance' => 'Remittance',
+                                'Business' => 'Business',
+                                'Gifts' => 'Gifts',
+                            ])
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['income_source'],
+                                fn (Builder $query, $source): Builder => $query->where('income_source', $source),
+                            );
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -66,7 +125,7 @@ class IncomeResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])->defaultSort('date','desc');
     }
 
     public static function getRelations(): array

@@ -1,13 +1,12 @@
 <?php
 
-namespace App\Filament\Resources\ExpenseResource\Widgets;
+namespace App\Filament\Resources\IncomeResource\Widgets;
 
-use App\Models\Expense;
-use App\Models\ExpenseCategory;
+use App\Models\Income;
 use App\Services\GlobalFinancialYearService;
 use Filament\Widgets\ChartWidget;
 
-class ExpenseCategoryOverview extends ChartWidget
+class IncomeSourceOverview extends ChartWidget
 {
     protected static ?string $heading = 'Chart';
 
@@ -17,24 +16,21 @@ class ExpenseCategoryOverview extends ChartWidget
         $dates = GlobalFinancialYearService::getSelectedFinancialYearDates();
         self::$heading = $financialYear . ' Financial Year';
 
-        $categories = ExpenseCategory::where('is_stats',true)->get();
-
+        $incomeSources = ['Salary', 'Remittance', 'Business', 'Gifts'];
         $expenses = array();
-        foreach ($categories as $category) {
-            $childCategories = ExpenseCategory::where('parent',$category->id)->pluck('id')->toArray();
-            $ids = array_merge([$category->id],$childCategories);
-
-            $sum = Expense::whereBetween('date', [$dates['start'], $dates['end']])
-                ->whereIn('category_id',$ids)
+        
+        foreach ($incomeSources as $source) {
+            $sum = Income::whereBetween('date', [$dates['start'], $dates['end']])
+                ->where('income_source', $source)
                 ->sum('amount');
-
-            $expenses[$category->name] = is_numeric($sum) ? (float) $sum : 0.0;
-
+            
+            $expenses[$source] = is_numeric($sum) ? (float) $sum : 0.0;
         }
+
         return [
             'datasets' => [
                 [
-                    'label' => 'Yearly Expenses',
+                    'label' => 'Yearly Income',
                     'data' => array_values($expenses),
                     'backgroundColor' => '#36A2EB',
                     'borderColor' => '#9BD0F5',

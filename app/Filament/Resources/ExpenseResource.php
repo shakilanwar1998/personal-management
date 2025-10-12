@@ -22,7 +22,7 @@ class ExpenseResource extends Resource
 {
     protected static ?string $model = Expense::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
 
     protected static ?string $navigationGroup = 'Account';
 
@@ -50,7 +50,9 @@ class ExpenseResource extends Resource
                 Forms\Components\TextInput::make('amount')
                     ->required()
                     ->numeric()
-                    ->default(0.00),
+                    ->minValue(0.01)
+                    ->default(0.00)
+                    ->prefix('৳'),
                 Forms\Components\TextInput::make('remarks')
                     ->maxLength(255),
             ]);

@@ -16,4 +16,12 @@ class ListIncomes extends ListRecords
             Actions\CreateAction::make(),
         ];
     }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            \App\Filament\Resources\IncomeResource\Widgets\MonthlyIncomeOverview::class,
+            \App\Filament\Resources\IncomeResource\Widgets\IncomeSourceOverview::class,
+        ];
+    }
 }

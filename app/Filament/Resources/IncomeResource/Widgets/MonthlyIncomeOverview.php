@@ -1,17 +1,13 @@
 <?php
 
-namespace App\Filament\Resources\ExpenseResource\Widgets;
+namespace App\Filament\Resources\IncomeResource\Widgets;
 
-use App\Models\Expense;
-use App\Models\Investment;
-use App\Services\Traits\DateFormat;
+use App\Models\Income;
 use App\Services\GlobalFinancialYearService;
 use Filament\Widgets\ChartWidget;
 
-class ExpenseOverview extends ChartWidget
+class MonthlyIncomeOverview extends ChartWidget
 {
-    use DateFormat;
-
     protected static ?string $heading = 'Chart';
 
     protected function getData(): array
@@ -23,29 +19,23 @@ class ExpenseOverview extends ChartWidget
         // Financial year months: Jul, Aug, Sep, Oct, Nov, Dec, Jan, Feb, Mar, Apr, May, Jun
         $monthlyData = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         $monthNames = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-        $monthNumbers = [7, 8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6]; // Financial year order
+        $monthNumbers = [7, 8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6];
 
-        // Get expenses for each month in financial year order
         for ($i = 0; $i < 12; $i++) {
             $month = $monthNumbers[$i];
             $year = ($month >= 7) ? $dates['start']->year : $dates['end']->year;
-            
-            $expenseSum = Expense::whereYear('date', $year)
+
+            $incomeSum = Income::whereYear('date', $year)
                 ->whereMonth('date', $month)
                 ->sum('amount');
-            
-            $investmentSum = Investment::whereYear('date', $year)
-                ->whereMonth('date', $month)
-                ->where('is_lifetime', true)
-                ->sum('amount');
-            
-            $monthlyData[$i] = (float) $expenseSum + (float) $investmentSum;
+
+            $monthlyData[$i] = (float) $incomeSum;
         }
 
         return [
             'datasets' => [
                 [
-                    'label' => 'Monthly Expenses (FY)',
+                    'label' => 'Monthly Income (FY)',
                     'data' => $monthlyData,
                     'backgroundColor' => '#36A2EB',
                     'borderColor' => '#9BD0F5',
@@ -54,8 +44,6 @@ class ExpenseOverview extends ChartWidget
             'labels' => $monthNames,
         ];
     }
-
-
 
     protected function getType(): string
     {

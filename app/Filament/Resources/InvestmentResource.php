@@ -21,7 +21,7 @@ class InvestmentResource extends Resource
 {
     protected static ?string $model = Investment::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
 
     protected static ?string $navigationGroup = 'Business';
 
@@ -37,7 +37,9 @@ class InvestmentResource extends Resource
                 Forms\Components\TextInput::make('amount')
                     ->required()
                     ->numeric()
-                    ->default(0.00),
+                    ->minValue(0.01)
+                    ->default(0.00)
+                    ->prefix('৳'),
                 Forms\Components\Toggle::make('is_lifetime')
                     ->required(),
                 Forms\Components\DatePicker::make('return_date'),
@@ -94,11 +96,17 @@ class InvestmentResource extends Resource
                                 'remarks' => 'Profit from '.$record->company_name
                             ]);
                         }elseif ($record->amount > $formData['amount']){
+                            // Find or create a "Investment Loss" category
+                            $lossCategory = \App\Models\ExpenseCategory::firstOrCreate(
+                                ['name' => 'Investment Loss'],
+                                ['parent' => 0, 'is_stats' => true]
+                            );
+                            
                             Expense::create([
                                 'date' => date('Y-m-d'),
                                 'amount' => $record->amount - $formData['amount'],
                                 'remarks' => 'Loss from Investment of '.$record->company_name,
-                                'category_id' => 29
+                                'category_id' => $lossCategory->id
                             ]);
                         }
                     })

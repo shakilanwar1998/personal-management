@@ -16,7 +16,7 @@ class LendingResource extends Resource
 {
     protected static ?string $model = LendingTransaction::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-arrow-up-right';
 
     protected static ?string $navigationGroup = 'Loans';
 
