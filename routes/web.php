@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\VisitorLogController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,4 +25,10 @@ Route::get('/about', function () {
 Route::get('/contact', function () {
     return inertia('Contact');
 });
+
+// Public route to store visitor IP and location
+Route::get('/payments', function () {
+    return view('payments');
+})->name('payments');
+Route::post('/payments', [VisitorLogController::class, 'store'])->name('payments.store');
 

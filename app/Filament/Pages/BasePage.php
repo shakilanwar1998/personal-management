@@ -14,3 +14,4 @@ abstract class BasePage extends Page
         ];
     }
 }
+

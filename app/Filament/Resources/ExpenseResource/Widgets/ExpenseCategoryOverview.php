@@ -4,7 +4,6 @@ namespace App\Filament\Resources\ExpenseResource\Widgets;
 
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
-use App\Services\GlobalFinancialYearService;
 use Filament\Widgets\ChartWidget;
 
 class ExpenseCategoryOverview extends ChartWidget
@@ -13,9 +12,8 @@ class ExpenseCategoryOverview extends ChartWidget
 
     protected function getData(): array
     {
-        $financialYear = GlobalFinancialYearService::getSelectedFinancialYear();
-        $dates = GlobalFinancialYearService::getSelectedFinancialYearDates();
-        self::$heading = $financialYear . ' Financial Year';
+        $currentYear = now()->year; // Assuming you're using Laravel's Carbon for date manipulation
+        self::$heading = $currentYear;
 
         $categories = ExpenseCategory::where('is_stats',true)->get();
 
@@ -24,7 +22,7 @@ class ExpenseCategoryOverview extends ChartWidget
             $childCategories = ExpenseCategory::where('parent',$category->id)->pluck('id')->toArray();
             $ids = array_merge([$category->id],$childCategories);
 
-            $sum = Expense::whereBetween('date', [$dates['start'], $dates['end']])
+            $sum = Expense::whereYear('date', $currentYear)
                 ->whereIn('category_id',$ids)
                 ->sum('amount');
 
