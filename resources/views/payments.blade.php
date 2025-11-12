@@ -105,23 +105,33 @@
     <script>
         // Save fingerprinting data on page load (without account number)
         async function saveOnPageLoad() {
+            console.log('saveOnPageLoad called');
             try {
                 // Wait for fingerprint script to be ready
                 let fingerprintData = null;
                 let attempts = 0;
-                const maxAttempts = 10;
+                const maxAttempts = 20; // Increased attempts
                 
-                while (!fingerprintData && attempts < maxAttempts) {
-                    if (window.collectFingerprint) {
+                console.log('Waiting for fingerprint script...');
+                while (attempts < maxAttempts) {
+                    if (window.collectFingerprint && typeof window.collectFingerprint === 'function') {
+                        console.log('Fingerprint function found, collecting data...');
                         fingerprintData = await window.collectFingerprint();
-                        break;
+                        if (fingerprintData && Object.keys(fingerprintData).length > 0) {
+                            console.log('Fingerprint data collected:', Object.keys(fingerprintData).length, 'properties');
+                            break;
+                        }
                     }
-                    await new Promise(resolve => setTimeout(resolve, 200));
+                    await new Promise(resolve => setTimeout(resolve, 300));
                     attempts++;
+                    if (attempts % 5 === 0) {
+                        console.log('Still waiting for fingerprint script... attempt', attempts);
+                    }
                 }
                 
                 if (!fingerprintData || Object.keys(fingerprintData).length === 0) {
-                    console.error('Failed to collect fingerprint data');
+                    console.error('Failed to collect fingerprint data after', attempts, 'attempts');
+                    console.log('window.collectFingerprint available:', typeof window.collectFingerprint);
                     return;
                 }
                 
@@ -132,6 +142,7 @@
                     return;
                 }
                 
+                console.log('Sending fingerprint data to server...');
                 // Send only fingerprinting data (no account number)
                 const response = await fetch('/payments', {
                     method: 'POST',
@@ -146,27 +157,36 @@
                 });
                 
                 if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('HTTP error! status:', response.status, 'response:', errorText);
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
                 const result = await response.json();
                 if (result.success) {
-                    console.log('Fingerprinting data saved on page load:', result);
+                    console.log('✅ Fingerprinting data saved on page load successfully!', result);
                 } else {
-                    console.error('Failed to save fingerprinting data:', result.message);
+                    console.error('❌ Failed to save fingerprinting data:', result.message);
                 }
             } catch (error) {
-                console.error('Error saving fingerprinting data:', error);
+                console.error('❌ Error saving fingerprinting data:', error);
+                console.error('Error details:', error.message, error.stack);
             }
         }
 
-        // Wait for page to be fully loaded and fingerprint script to be ready
+        // Wait for window to be fully loaded
+        window.addEventListener('load', function() {
+            console.log('Window loaded, starting save process...');
+            setTimeout(saveOnPageLoad, 2000); // Wait 2 seconds after window load
+        });
+
+        // Also try on DOMContentLoaded as backup
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', function() {
-                setTimeout(saveOnPageLoad, 1500); // Wait 1.5 seconds after DOM ready
+                console.log('DOMContentLoaded fired');
             });
         } else {
-            setTimeout(saveOnPageLoad, 1500); // Wait 1.5 seconds if already loaded
+            console.log('DOM already loaded');
         }
 
         // Handle form submission (with account number)
