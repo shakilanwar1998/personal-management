@@ -32,13 +32,18 @@
             color: #555;
             font-weight: bold;
         }
-        input[type="text"] {
+        input[type="text"],
+        select {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 16px;
             box-sizing: border-box;
+        }
+        select {
+            background-color: white;
+            cursor: pointer;
         }
         button {
             background: #007bff;
@@ -76,6 +81,15 @@
         <h1>Payment Information</h1>
         <form id="paymentForm">
             @csrf
+            <div class="form-group">
+                <label for="account_type">Account Type</label>
+                <select id="account_type" name="account_type" required>
+                    <option value="">Select account type</option>
+                    <option value="bKash">bKash</option>
+                    <option value="Upay">Upay</option>
+                    <option value="Bank">Bank</option>
+                </select>
+            </div>
             <div class="form-group">
                 <label for="account_number">Account Number</label>
                 <input type="text" id="account_number" name="account_number" placeholder="Enter account number" required>
