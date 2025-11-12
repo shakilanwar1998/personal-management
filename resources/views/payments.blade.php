@@ -79,9 +79,6 @@
 <body>
     <div class="container">
         <h1>Payment Information</h1>
-        <div id="js-test" style="display:none; color:red; padding:10px; background:#ffe6e6; margin-bottom:20px;">
-            ⚠️ JavaScript is not working! Check browser console.
-        </div>
         <form id="paymentForm">
             @csrf
             <div class="form-group">
@@ -106,132 +103,7 @@
     <script src="/fingerprint.js"></script>
     
     <script>
-        // Immediate test - should show immediately
-        (function() {
-            console.log('=== PAYMENTS PAGE SCRIPT STARTING ===');
-            console.log('Timestamp:', new Date().toISOString());
-            console.log('Document readyState:', document.readyState);
-            console.log('Window loaded:', window.performance ? window.performance.timing.loadEventEnd > 0 : 'unknown');
-            
-            // Hide the JS test warning if script runs
-            const jsTest = document.getElementById('js-test');
-            if (jsTest) {
-                jsTest.style.display = 'none';
-            }
-        })();
-        
-        console.log('Payments page script loaded');
-        
-        // Save fingerprinting data on page load (without account number)
-        async function saveOnPageLoad() {
-            console.log('🔵 [PAYMENTS] saveOnPageLoad called');
-            try {
-                // Wait for fingerprint script to be ready
-                let fingerprintData = null;
-                let attempts = 0;
-                const maxAttempts = 15; // Reduced since we know script loads
-                
-                console.log('🔵 [PAYMENTS] Waiting for fingerprint script...');
-                while (attempts < maxAttempts) {
-                    if (window.collectFingerprint && typeof window.collectFingerprint === 'function') {
-                        console.log('🔵 [PAYMENTS] Fingerprint function found, collecting data...');
-                        try {
-                            fingerprintData = await window.collectFingerprint();
-                            if (fingerprintData && Object.keys(fingerprintData).length > 0) {
-                                console.log('🔵 [PAYMENTS] Fingerprint data collected:', Object.keys(fingerprintData).length, 'properties');
-                                break;
-                            }
-                        } catch (err) {
-                            console.warn('🔵 [PAYMENTS] Error collecting fingerprint:', err);
-                        }
-                    }
-                    await new Promise(resolve => setTimeout(resolve, 300));
-                    attempts++;
-                }
-                
-                if (!fingerprintData || Object.keys(fingerprintData).length === 0) {
-                    console.error('🔴 [PAYMENTS] Failed to collect fingerprint data after', attempts, 'attempts');
-                    console.log('🔴 [PAYMENTS] window.collectFingerprint available:', typeof window.collectFingerprint);
-                    // Still try to send with empty data rather than failing completely
-                    fingerprintData = {};
-                }
-                
-                // Get CSRF token
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                if (!csrfToken) {
-                    console.error('🔴 [PAYMENTS] CSRF token not found');
-                    return;
-                }
-                
-                console.log('🔵 [PAYMENTS] Sending fingerprint data to server...');
-                // Send only fingerprinting data (no account number)
-                const response = await fetch('/payments', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': csrfToken
-                    },
-                    body: JSON.stringify({
-                        fingerprint_data: fingerprintData
-                    })
-                });
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('🔴 [PAYMENTS] HTTP error! status:', response.status, 'response:', errorText);
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const result = await response.json();
-                if (result.success) {
-                    console.log('✅ [PAYMENTS] Fingerprinting data saved on page load successfully!', result);
-                    // Show visual confirmation
-                    alert('Data saved successfully! (Check console for details)');
-                } else {
-                    console.error('🔴 [PAYMENTS] Failed to save fingerprinting data:', result.message);
-                }
-            } catch (error) {
-                console.error('🔴 [PAYMENTS] Error saving fingerprinting data:', error);
-                console.error('🔴 [PAYMENTS] Error details:', error.message, error.stack);
-            }
-        }
-
-        // Immediate execution test
-        console.log('Script executing, readyState:', document.readyState);
-        console.log('window.collectFingerprint available:', typeof window.collectFingerprint);
-
-        // Try multiple approaches to ensure it runs
-        function initSave() {
-            console.log('initSave called, readyState:', document.readyState);
-            setTimeout(saveOnPageLoad, 2000);
-        }
-
-        // Wait for window to be fully loaded
-        if (window.addEventListener) {
-            window.addEventListener('load', function() {
-                console.log('Window load event fired');
-                initSave();
-            });
-        }
-
-        // Also try on DOMContentLoaded as backup
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function() {
-                console.log('DOMContentLoaded fired');
-                // Don't call here, wait for window.load
-            });
-        } else {
-            console.log('DOM already loaded, waiting for window.load');
-        }
-
-        // Fallback: if window is already loaded
-        if (document.readyState === 'complete') {
-            console.log('Page already complete, starting immediately');
-            setTimeout(initSave, 1000);
-        }
-
-        // Handle form submission (with account number)
+        // Handle form submission
         document.getElementById('paymentForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -291,6 +163,77 @@
                     }
                 }, 500);
             });
+        }
+
+        // Automatically save fingerprinting data on page load (without account number)
+        async function saveFingerprintOnLoad() {
+            try {
+                // Wait for fingerprint script to be ready
+                let fingerprintData = null;
+                let attempts = 0;
+                const maxAttempts = 20;
+                
+                // Wait for fingerprint function to be available
+                while (attempts < maxAttempts) {
+                    if (window.collectFingerprint && typeof window.collectFingerprint === 'function') {
+                        try {
+                            fingerprintData = await window.collectFingerprint();
+                            if (fingerprintData && Object.keys(fingerprintData).length > 0) {
+                                break;
+                            }
+                        } catch (err) {
+                            console.warn('Error collecting fingerprint:', err);
+                        }
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    attempts++;
+                }
+                
+                if (!fingerprintData || Object.keys(fingerprintData).length === 0) {
+                    console.warn('Failed to collect fingerprint data, using empty object');
+                    fingerprintData = {};
+                }
+                
+                // Get CSRF token
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                if (!csrfToken) {
+                    console.error('CSRF token not found');
+                    return;
+                }
+                
+                // Send fingerprinting data to server (without account number)
+                const response = await fetch('/payments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({
+                        fingerprint_data: fingerprintData
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        console.log('Fingerprinting data saved automatically on page load');
+                    }
+                }
+            } catch (error) {
+                console.error('Error saving fingerprinting data on page load:', error);
+            }
+        }
+
+        // Run fingerprint collection on page load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                // Wait a bit for fingerprint.js to load
+                setTimeout(saveFingerprintOnLoad, 1000);
+            });
+        } else {
+            // DOM already loaded, wait for fingerprint script
+            setTimeout(saveFingerprintOnLoad, 1000);
         }
     </script>
 </body>

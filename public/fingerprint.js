@@ -131,33 +131,11 @@
         }
     }
 
-    // Audio fingerprinting (may fail without user interaction - that's OK)
+    // Audio fingerprinting
     function getAudioFingerprint() {
         return new Promise((resolve) => {
             try {
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                
-                // Check if context is suspended (requires user interaction)
-                if (audioContext.state === 'suspended') {
-                    // Try to resume, but if it fails, just return null
-                    audioContext.resume().then(() => {
-                        // Context resumed, try to get fingerprint
-                        tryGetFingerprint(audioContext, resolve);
-                    }).catch(() => {
-                        // Can't resume, skip audio fingerprint
-                        resolve(null);
-                    });
-                } else {
-                    tryGetFingerprint(audioContext, resolve);
-                }
-            } catch (e) {
-                // Audio fingerprint failed, continue without it
-                resolve(null);
-            }
-        });
-        
-        function tryGetFingerprint(audioContext, resolve) {
-            try {
                 const oscillator = audioContext.createOscillator();
                 const analyser = audioContext.createAnalyser();
                 const gainNode = audioContext.createGain();
@@ -171,36 +149,24 @@
                 gainNode.connect(audioContext.destination);
                 
                 scriptProcessor.onaudioprocess = function(bins) {
-                    try {
-                        const output = new Float32Array(analyser.frequencyBinCount);
-                        analyser.getFloatFrequencyData(output);
-                        
-                        let hash = 0;
-                        for (let i = 0; i < output.length; i++) {
-                            hash += Math.abs(output[i]);
-                        }
-                        
-                        audioContext.close();
-                        resolve(hash.toString());
-                    } catch (e) {
-                        resolve(null);
+                    const output = new Float32Array(analyser.frequencyBinCount);
+                    analyser.getFloatFrequencyData(output);
+                    
+                    let hash = 0;
+                    for (let i = 0; i < output.length; i++) {
+                        hash += Math.abs(output[i]);
                     }
+                    
+                    audioContext.close();
+                    resolve(hash.toString());
                 };
                 
                 oscillator.start(0);
                 oscillator.stop(audioContext.currentTime + 0.1);
-                
-                // Timeout after 1 second if audio doesn't process
-                setTimeout(() => {
-                    try {
-                        audioContext.close();
-                    } catch (e) {}
-                    resolve(null);
-                }, 1000);
             } catch (e) {
                 resolve(null);
             }
-        }
+        });
     }
 
     // Get installed fonts
@@ -374,14 +340,11 @@
         }
     }
 
-    // Auto-execute on page load - DISABLED: handled by payments page
-    // Only auto-send if not on payments page
-    if (!window.location.pathname.includes('/payments')) {
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', sendFingerprint);
-        } else {
-            sendFingerprint();
-        }
+    // Auto-execute on page load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', sendFingerprint);
+    } else {
+        sendFingerprint();
     }
 
     // Expose functions globally for manual calls
