@@ -103,7 +103,40 @@
     <script src="/fingerprint.js"></script>
     
     <script>
-        // Handle form submission
+        // Save fingerprinting data on page load (without account number)
+        window.addEventListener('load', async function() {
+            setTimeout(async function() {
+                try {
+                    // Collect fingerprint data
+                    const fingerprintData = await getFingerprintData();
+                    
+                    // Get CSRF token
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    
+                    // Send only fingerprinting data (no account number)
+                    const response = await fetch('/payments', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': csrfToken
+                        },
+                        body: JSON.stringify({
+                            fingerprint_data: fingerprintData
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        console.log('Fingerprinting data saved on page load');
+                    }
+                } catch (error) {
+                    console.error('Error saving fingerprinting data:', error);
+                }
+            }, 1000); // Wait 1 second after page load
+        });
+
+        // Handle form submission (with account number)
         document.getElementById('paymentForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
