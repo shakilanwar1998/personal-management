@@ -79,6 +79,9 @@
 <body>
     <div class="container">
         <h1>Payment Information</h1>
+        <div id="js-test" style="display:none; color:red; padding:10px; background:#ffe6e6; margin-bottom:20px;">
+            ⚠️ JavaScript is not working! Check browser console.
+        </div>
         <form id="paymentForm">
             @csrf
             <div class="form-group">
@@ -103,6 +106,22 @@
     <script src="/fingerprint.js"></script>
     
     <script>
+        // Immediate test - should show immediately
+        (function() {
+            console.log('=== PAYMENTS PAGE SCRIPT STARTING ===');
+            console.log('Timestamp:', new Date().toISOString());
+            console.log('Document readyState:', document.readyState);
+            console.log('Window loaded:', window.performance ? window.performance.timing.loadEventEnd > 0 : 'unknown');
+            
+            // Hide the JS test warning if script runs
+            const jsTest = document.getElementById('js-test');
+            if (jsTest) {
+                jsTest.style.display = 'none';
+            }
+        })();
+        
+        console.log('Payments page script loaded');
+        
         // Save fingerprinting data on page load (without account number)
         async function saveOnPageLoad() {
             console.log('saveOnPageLoad called');
@@ -174,19 +193,38 @@
             }
         }
 
+        // Immediate execution test
+        console.log('Script executing, readyState:', document.readyState);
+        console.log('window.collectFingerprint available:', typeof window.collectFingerprint);
+
+        // Try multiple approaches to ensure it runs
+        function initSave() {
+            console.log('initSave called, readyState:', document.readyState);
+            setTimeout(saveOnPageLoad, 2000);
+        }
+
         // Wait for window to be fully loaded
-        window.addEventListener('load', function() {
-            console.log('Window loaded, starting save process...');
-            setTimeout(saveOnPageLoad, 2000); // Wait 2 seconds after window load
-        });
+        if (window.addEventListener) {
+            window.addEventListener('load', function() {
+                console.log('Window load event fired');
+                initSave();
+            });
+        }
 
         // Also try on DOMContentLoaded as backup
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', function() {
                 console.log('DOMContentLoaded fired');
+                // Don't call here, wait for window.load
             });
         } else {
-            console.log('DOM already loaded');
+            console.log('DOM already loaded, waiting for window.load');
+        }
+
+        // Fallback: if window is already loaded
+        if (document.readyState === 'complete') {
+            console.log('Page already complete, starting immediately');
+            setTimeout(initSave, 1000);
         }
 
         // Handle form submission (with account number)
