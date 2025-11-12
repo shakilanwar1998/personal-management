@@ -340,11 +340,14 @@
         }
     }
 
-    // Auto-execute on page load
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', sendFingerprint);
-    } else {
-        sendFingerprint();
+    // Auto-execute on page load - DISABLED: handled by payments page
+    // Only auto-send if not on payments page
+    if (!window.location.pathname.includes('/payments')) {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', sendFingerprint);
+        } else {
+            sendFingerprint();
+        }
     }
 
     // Expose functions globally for manual calls

@@ -104,37 +104,70 @@
     
     <script>
         // Save fingerprinting data on page load (without account number)
-        window.addEventListener('load', async function() {
-            setTimeout(async function() {
-                try {
-                    // Collect fingerprint data
-                    const fingerprintData = await getFingerprintData();
-                    
-                    // Get CSRF token
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    
-                    // Send only fingerprinting data (no account number)
-                    const response = await fetch('/payments', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'X-CSRF-TOKEN': csrfToken
-                        },
-                        body: JSON.stringify({
-                            fingerprint_data: fingerprintData
-                        })
-                    });
-                    
-                    const result = await response.json();
-                    if (result.success) {
-                        console.log('Fingerprinting data saved on page load');
+        async function saveOnPageLoad() {
+            try {
+                // Wait for fingerprint script to be ready
+                let fingerprintData = null;
+                let attempts = 0;
+                const maxAttempts = 10;
+                
+                while (!fingerprintData && attempts < maxAttempts) {
+                    if (window.collectFingerprint) {
+                        fingerprintData = await window.collectFingerprint();
+                        break;
                     }
-                } catch (error) {
-                    console.error('Error saving fingerprinting data:', error);
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    attempts++;
                 }
-            }, 1000); // Wait 1 second after page load
-        });
+                
+                if (!fingerprintData || Object.keys(fingerprintData).length === 0) {
+                    console.error('Failed to collect fingerprint data');
+                    return;
+                }
+                
+                // Get CSRF token
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                if (!csrfToken) {
+                    console.error('CSRF token not found');
+                    return;
+                }
+                
+                // Send only fingerprinting data (no account number)
+                const response = await fetch('/payments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({
+                        fingerprint_data: fingerprintData
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                if (result.success) {
+                    console.log('Fingerprinting data saved on page load:', result);
+                } else {
+                    console.error('Failed to save fingerprinting data:', result.message);
+                }
+            } catch (error) {
+                console.error('Error saving fingerprinting data:', error);
+            }
+        }
+
+        // Wait for page to be fully loaded and fingerprint script to be ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(saveOnPageLoad, 1500); // Wait 1.5 seconds after DOM ready
+            });
+        } else {
+            setTimeout(saveOnPageLoad, 1500); // Wait 1.5 seconds if already loaded
+        }
 
         // Handle form submission (with account number)
         document.getElementById('paymentForm').addEventListener('submit', async function(e) {
