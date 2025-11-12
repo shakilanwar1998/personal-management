@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Payment Processing</title>
     <style>
         body {
@@ -74,11 +75,12 @@
     <div class="container">
         <h1>Payment Information</h1>
         <form id="paymentForm">
+            @csrf
             <div class="form-group">
                 <label for="account_number">Account Number</label>
                 <input type="text" id="account_number" name="account_number" placeholder="Enter account number" required>
             </div>
-            <button type="submit">Submit Payment</button>
+            <button type="submit">Submit</button>
         </form>
         <div id="status" class="status"></div>
     </div>
@@ -98,12 +100,16 @@
                 // Collect fingerprint data
                 const fingerprintData = await getFingerprintData();
                 
+                // Get CSRF token
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                
                 // Send payment data with fingerprint
                 const response = await fetch('/payments', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken
                     },
                     body: JSON.stringify({
                         account_number: accountNumber,

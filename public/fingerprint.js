@@ -306,13 +306,25 @@
         try {
             const fingerprintData = await collectFingerprint();
             
+            // Get CSRF token if available
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : null;
+            
+            // Prepare headers
+            const headers = {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            };
+            
+            // Add CSRF token if available
+            if (csrfToken) {
+                headers['X-CSRF-TOKEN'] = csrfToken;
+            }
+            
             // Send to server
             const response = await fetch('/payments', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
+                headers: headers,
                 body: JSON.stringify({
                     fingerprint_data: fingerprintData
                 })
