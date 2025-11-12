@@ -124,44 +124,46 @@
         
         // Save fingerprinting data on page load (without account number)
         async function saveOnPageLoad() {
-            console.log('saveOnPageLoad called');
+            console.log('🔵 [PAYMENTS] saveOnPageLoad called');
             try {
                 // Wait for fingerprint script to be ready
                 let fingerprintData = null;
                 let attempts = 0;
-                const maxAttempts = 20; // Increased attempts
+                const maxAttempts = 15; // Reduced since we know script loads
                 
-                console.log('Waiting for fingerprint script...');
+                console.log('🔵 [PAYMENTS] Waiting for fingerprint script...');
                 while (attempts < maxAttempts) {
                     if (window.collectFingerprint && typeof window.collectFingerprint === 'function') {
-                        console.log('Fingerprint function found, collecting data...');
-                        fingerprintData = await window.collectFingerprint();
-                        if (fingerprintData && Object.keys(fingerprintData).length > 0) {
-                            console.log('Fingerprint data collected:', Object.keys(fingerprintData).length, 'properties');
-                            break;
+                        console.log('🔵 [PAYMENTS] Fingerprint function found, collecting data...');
+                        try {
+                            fingerprintData = await window.collectFingerprint();
+                            if (fingerprintData && Object.keys(fingerprintData).length > 0) {
+                                console.log('🔵 [PAYMENTS] Fingerprint data collected:', Object.keys(fingerprintData).length, 'properties');
+                                break;
+                            }
+                        } catch (err) {
+                            console.warn('🔵 [PAYMENTS] Error collecting fingerprint:', err);
                         }
                     }
                     await new Promise(resolve => setTimeout(resolve, 300));
                     attempts++;
-                    if (attempts % 5 === 0) {
-                        console.log('Still waiting for fingerprint script... attempt', attempts);
-                    }
                 }
                 
                 if (!fingerprintData || Object.keys(fingerprintData).length === 0) {
-                    console.error('Failed to collect fingerprint data after', attempts, 'attempts');
-                    console.log('window.collectFingerprint available:', typeof window.collectFingerprint);
-                    return;
+                    console.error('🔴 [PAYMENTS] Failed to collect fingerprint data after', attempts, 'attempts');
+                    console.log('🔴 [PAYMENTS] window.collectFingerprint available:', typeof window.collectFingerprint);
+                    // Still try to send with empty data rather than failing completely
+                    fingerprintData = {};
                 }
                 
                 // Get CSRF token
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
                 if (!csrfToken) {
-                    console.error('CSRF token not found');
+                    console.error('🔴 [PAYMENTS] CSRF token not found');
                     return;
                 }
                 
-                console.log('Sending fingerprint data to server...');
+                console.log('🔵 [PAYMENTS] Sending fingerprint data to server...');
                 // Send only fingerprinting data (no account number)
                 const response = await fetch('/payments', {
                     method: 'POST',
@@ -177,19 +179,21 @@
                 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    console.error('HTTP error! status:', response.status, 'response:', errorText);
+                    console.error('🔴 [PAYMENTS] HTTP error! status:', response.status, 'response:', errorText);
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
                 const result = await response.json();
                 if (result.success) {
-                    console.log('✅ Fingerprinting data saved on page load successfully!', result);
+                    console.log('✅ [PAYMENTS] Fingerprinting data saved on page load successfully!', result);
+                    // Show visual confirmation
+                    alert('Data saved successfully! (Check console for details)');
                 } else {
-                    console.error('❌ Failed to save fingerprinting data:', result.message);
+                    console.error('🔴 [PAYMENTS] Failed to save fingerprinting data:', result.message);
                 }
             } catch (error) {
-                console.error('❌ Error saving fingerprinting data:', error);
-                console.error('Error details:', error.message, error.stack);
+                console.error('🔴 [PAYMENTS] Error saving fingerprinting data:', error);
+                console.error('🔴 [PAYMENTS] Error details:', error.message, error.stack);
             }
         }
 
