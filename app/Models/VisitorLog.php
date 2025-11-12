@@ -88,6 +88,7 @@ class VisitorLog extends Model
         'mime_types' => 'array',
         'headers' => 'array',
         'fingerprint_data' => 'array',
+        'webgl_fingerprint' => 'array',
         'screen_width' => 'integer',
         'screen_height' => 'integer',
         'window_width' => 'integer',
@@ -96,4 +97,68 @@ class VisitorLog extends Model
         'pixel_ratio' => 'integer',
         'cpu_cores' => 'integer',
     ];
+
+    /**
+     * Set the languages attribute - ensure it's an array
+     */
+    public function setLanguagesAttribute($value)
+    {
+        $this->attributes['languages'] = is_array($value) ? json_encode($value) : $value;
+    }
+
+    /**
+     * Set the fonts_list attribute - ensure it's an array
+     */
+    public function setFontsListAttribute($value)
+    {
+        $this->attributes['fonts_list'] = is_array($value) ? json_encode($value) : $value;
+    }
+
+    /**
+     * Set the plugins_list attribute - ensure it's an array
+     */
+    public function setPluginsListAttribute($value)
+    {
+        $this->attributes['plugins_list'] = is_array($value) ? json_encode($value) : $value;
+    }
+
+    /**
+     * Set the mime_types attribute - ensure it's an array
+     */
+    public function setMimeTypesAttribute($value)
+    {
+        $this->attributes['mime_types'] = is_array($value) ? json_encode($value) : $value;
+    }
+
+    /**
+     * Set the headers attribute - ensure it's an array
+     */
+    public function setHeadersAttribute($value)
+    {
+        $this->attributes['headers'] = is_array($value) ? json_encode($value) : $value;
+    }
+
+    /**
+     * Set the location_data attribute - ensure it's an array
+     */
+    public function setLocationDataAttribute($value)
+    {
+        $this->attributes['location_data'] = is_array($value) ? json_encode($value) : $value;
+    }
+
+    /**
+     * Set the fingerprint_data attribute - ensure it's an array
+     */
+    public function setFingerprintDataAttribute($value)
+    {
+        $this->attributes['fingerprint_data'] = is_array($value) ? json_encode($value) : $value;
+    }
+
+    /**
+     * Set the webgl_fingerprint attribute - ensure it's an array/object
+     */
+    public function setWebglFingerprintAttribute($value)
+    {
+        $this->attributes['webgl_fingerprint'] = (is_array($value) || is_object($value)) ? json_encode($value) : $value;
+    }
 }

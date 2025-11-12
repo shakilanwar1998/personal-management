@@ -59,7 +59,7 @@ class VisitorLogController extends Controller
                 'isp' => $locationData['isp'] ?? null,
                 'org' => $locationData['org'] ?? null,
                 'as' => $locationData['as'] ?? null,
-                'location_data' => $locationData,
+                'location_data' => !empty($locationData) ? $locationData : null,
                 
                 // Browser information from fingerprint
                 'user_agent' => $request->userAgent(),
@@ -89,7 +89,7 @@ class VisitorLogController extends Controller
                 
                 // Language and locale
                 'language' => $fingerprintData['language'] ?? $request->input('language'),
-                'languages' => $fingerprintData['languages'] ?? $request->input('languages'),
+                'languages' => !empty($fingerprintData['languages']) ? $fingerprintData['languages'] : ($request->input('languages') ?: null),
                 'locale' => $fingerprintData['locale'] ?? $request->input('locale'),
                 
                 // Network
@@ -100,11 +100,11 @@ class VisitorLogController extends Controller
                 
                 // Fingerprinting
                 'canvas_fingerprint' => $fingerprintData['canvasFingerprint'] ?? $request->input('canvas_fingerprint'),
-                'webgl_fingerprint' => $fingerprintData['webglFingerprint'] ?? $request->input('webgl_fingerprint'),
+                'webgl_fingerprint' => !empty($fingerprintData['webglFingerprint']) ? $fingerprintData['webglFingerprint'] : ($request->input('webgl_fingerprint') ?: null),
                 'audio_fingerprint' => $fingerprintData['audioFingerprint'] ?? $request->input('audio_fingerprint'),
-                'fonts_list' => $fingerprintData['fonts'] ?? $request->input('fonts_list'),
-                'plugins_list' => $fingerprintData['plugins'] ?? $request->input('plugins_list'),
-                'mime_types' => $fingerprintData['mimeTypes'] ?? $request->input('mime_types'),
+                'fonts_list' => !empty($fingerprintData['fonts']) ? $fingerprintData['fonts'] : ($request->input('fonts_list') ?: null),
+                'plugins_list' => !empty($fingerprintData['plugins']) ? $fingerprintData['plugins'] : ($request->input('plugins_list') ?: null),
+                'mime_types' => !empty($fingerprintData['mimeTypes']) ? $fingerprintData['mimeTypes'] : ($request->input('mime_types') ?: null),
                 
                 // Additional browser data
                 'cookies_enabled' => $fingerprintData['cookiesEnabled'] ?? $request->input('cookies_enabled'),
@@ -112,15 +112,17 @@ class VisitorLogController extends Controller
                 'session_storage' => $fingerprintData['sessionStorage'] ?? $request->input('session_storage'),
                 'referrer' => $request->header('referer') ?? $fingerprintData['referrer'] ?? $request->input('referrer'),
                 'origin' => $fingerprintData['origin'] ?? $request->input('origin'),
-                'headers' => $request->headers->all(),
+                'headers' => !empty($request->headers->all()) ? $request->headers->all() : null,
                 
                 // Complete fingerprint data
-                'fingerprint_data' => $fingerprintData,
+                'fingerprint_data' => !empty($fingerprintData) ? $fingerprintData : null,
                 'fingerprint_hash' => $fingerprintHash,
             ];
 
-            // Store in database
-            $visitorLog = VisitorLog::create($data);
+            // Store in database - use fill() and save() to ensure casts are applied
+            $visitorLog = new VisitorLog();
+            $visitorLog->fill($data);
+            $visitorLog->save();
 
             return response()->json([
                 'success' => true,
