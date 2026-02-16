@@ -9,9 +9,7 @@
 
     @inertiaHead
 </head>
-<body>
-<section class="px-5 py-5">
+<body class="bg-slate-950 text-slate-100 antialiased">
     @inertia
-</section>
 </body>
 </html>

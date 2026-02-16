@@ -2,3 +2,4 @@
 /.idea
 *.lock
 /vendor
+/node_modules
