@@ -88,23 +88,25 @@ class InvestmentResource extends Resource
                     ->button()
                     ->before(function (Action $action, Investment $record) {
                         $formData = $action->getFormData();
+                        $recordAmount = (float) $record->getRawOriginal('amount');
+                        $returnAmount = (float) $formData['amount'];
 
-                        if($formData['amount'] > $record->amount){
+                        if($returnAmount > $recordAmount){
                             Income::create([
                                 'date' => date('Y-m-d'),
-                                'amount' => $formData['amount'] - $record->amount,
+                                'amount' => $returnAmount - $recordAmount,
                                 'remarks' => 'Profit from '.$record->company_name
                             ]);
-                        }elseif ($record->amount > $formData['amount']){
+                        }elseif ($recordAmount > $returnAmount){
                             // Find or create a "Investment Loss" category
                             $lossCategory = \App\Models\ExpenseCategory::firstOrCreate(
                                 ['name' => 'Investment Loss'],
                                 ['parent' => 0, 'is_stats' => true]
                             );
-                            
+
                             Expense::create([
                                 'date' => date('Y-m-d'),
-                                'amount' => $record->amount - $formData['amount'],
+                                'amount' => $recordAmount - $returnAmount,
                                 'remarks' => 'Loss from Investment of '.$record->company_name,
                                 'category_id' => $lossCategory->id
                             ]);
