@@ -9,6 +9,7 @@ use App\Models\LendingTransaction;
 use App\Services\GlobalFinancialYearService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class BalanceOverview extends BaseWidget
@@ -95,8 +96,12 @@ class BalanceOverview extends BaseWidget
     {
         $income = Income::sum('amount') ?? 0;
         $expense = Expense::sum('amount') ?? 0;
-        $lendingTransactions = LendingTransaction::where('is_returned', false)->sum('amount') ?? 0;
-        $investments = Investment::where('is_returned', false)->sum('amount') ?? 0;
+        // Only the amount still out (invested / lent but not yet returned) reduces the
+        // available balance; partial returns bring that cash back automatically.
+        $lendingTransactions = LendingTransaction::where('is_returned', false)
+            ->sum(DB::raw('amount - returned_amount')) ?? 0;
+        $investments = Investment::where('is_returned', false)
+            ->sum(DB::raw('amount - returned_amount')) ?? 0;
 
         return (float) $income - ((float) $expense + (float) $lendingTransactions + (float) $investments);
     }

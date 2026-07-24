@@ -6,7 +6,9 @@ use App\Filament\Resources\LendingResource\Pages;
 use App\Filament\Resources\LendingResource\RelationManagers;
 use App\Models\LendingTransaction;
 use Filament\Forms;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\Action;
@@ -43,23 +45,56 @@ class LendingResource extends Resource
                 Tables\Columns\TextColumn::make('amount')
                     ->numeric()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('returned_amount')
+                    ->label('Returned')
+                    ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('outstanding')
+                    ->label('Outstanding')
+                    ->numeric()
+                    ->state(fn (LendingTransaction $record) => $record->outstanding),
                 Tables\Columns\TextColumn::make('due_date')
                     ->date()
                     ->sortable(),
-                Tables\Columns\IconColumn::make('is_returned')
-                    ->label('Returned')
-                    ->boolean()
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'Returned' => 'success',
+                        'Partially Returned' => 'warning',
+                        default => 'gray',
+                    }),
             ])
             ->filters([
                 //
             ])
             ->actions([
-                Action::make('Returned')
+                Action::make('return')
                     ->color('success')
                     ->label('Return')
-                    ->action(function (LendingTransaction $record) {
-                        $record->is_returned = !$record->is_returned;
+                    ->button()
+                    ->form([
+                        TextInput::make('amount')
+                            ->label('Return amount')
+                            ->numeric()
+                            ->required()
+                            ->minValue(0.01)
+                            ->default(fn (LendingTransaction $record) => $record->outstanding)
+                            ->maxValue(fn (LendingTransaction $record) => $record->outstanding)
+                            ->helperText(fn (LendingTransaction $record) => 'Outstanding: ' . number_format($record->outstanding, 2)),
+                    ])
+                    ->action(function (LendingTransaction $record, array $data) {
+                        $record->returned_amount = (float) $record->returned_amount + (float) $data['amount'];
+
+                        if ((float) $record->returned_amount >= (float) $record->amount) {
+                            $record->is_returned = true;
+                        }
+
                         $record->save();
+
+                        Notification::make()
+                            ->success()
+                            ->title($record->is_returned ? 'Loan fully returned' : 'Partial return recorded')
+                            ->send();
                     })->hidden(function ($record){
                         return $record->is_returned;
                     }),

@@ -68,61 +68,104 @@ class InvestmentResource extends Resource
                 Tables\Columns\TextColumn::make('amount')
                     ->numeric()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('returned_amount')
+                    ->label('Returned')
+                    ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('outstanding')
+                    ->label('Outstanding')
+                    ->numeric()
+                    ->state(fn (Investment $record) => $record->outstanding),
                 Tables\Columns\IconColumn::make('is_lifetime')
                     ->label('Lifetime')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('return_date')
                     ->date()
                     ->sortable(),
-                Tables\Columns\IconColumn::make('is_returned')
-                    ->label('Returned')
-                    ->boolean()
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'Returned' => 'success',
+                        'Partially Returned' => 'warning',
+                        'Lifetime' => 'info',
+                        default => 'gray',
+                    }),
             ])
             ->filters([
                 //
             ])
             ->actions([
-                Action::make('Returned')
+                Action::make('return')
                     ->color('success')
                     ->label('Return')
                     ->button()
-                    ->before(function (Action $action, Investment $record) {
-                        $formData = $action->getFormData();
-                        $recordAmount = (float) $record->getRawOriginal('amount');
-                        $returnAmount = (float) $formData['amount'];
-
-                        if($returnAmount > $recordAmount){
-                            Income::create([
-                                'date' => date('Y-m-d'),
-                                'amount' => $returnAmount - $recordAmount,
-                                'remarks' => 'Profit from '.$record->company_name
-                            ]);
-                        }elseif ($recordAmount > $returnAmount){
-                            // Find or create a "Investment Loss" category
-                            $lossCategory = \App\Models\ExpenseCategory::firstOrCreate(
-                                ['name' => 'Investment Loss'],
-                                ['parent' => 0, 'is_stats' => true]
-                            );
-
-                            Expense::create([
-                                'date' => date('Y-m-d'),
-                                'amount' => $recordAmount - $returnAmount,
-                                'remarks' => 'Loss from Investment of '.$record->company_name,
-                                'category_id' => $lossCategory->id
-                            ]);
-                        }
-                    })
                     ->form([
                         TextInput::make('amount')
+                            ->label('Return amount')
                             ->required()
                             ->numeric()
-                            ->default(function ($record){
-                                return $record->amount;
-                            })
+                            ->minValue(0.01)
+                            ->default(fn (Investment $record) => $record->outstanding)
+                            ->helperText(fn (Investment $record) => 'Invested: ' . number_format($record->rawAmount(), 2)
+                                . ' | Outstanding: ' . number_format($record->outstanding, 2)
+                                . '. Enter more than the outstanding principal to book a profit.'),
+                        Forms\Components\Toggle::make('final')
+                            ->label('Final settlement')
+                            ->helperText('Close this investment now. If less than the invested principal has been returned, the remainder is written off as a loss.')
+                            ->default(false),
                     ])
-                    ->action(function (Investment $record) {
-                        $record->is_returned = !$record->is_returned;
+                    ->action(function (Investment $record, array $data) {
+                        $invested = $record->rawAmount();
+                        $prevReturned = $record->rawReturnedAmount();
+                        $returnNow = (float) $data['amount'];
+                        $newReturned = $prevReturned + $returnNow;
+
+                        // Book profit incrementally: only the portion received above the
+                        // invested principal that hasn't already been booked as profit.
+                        $profitBefore = max(0, $prevReturned - $invested);
+                        $profitAfter = max(0, $newReturned - $invested);
+                        $profitDelta = $profitAfter - $profitBefore;
+
+                        if ($profitDelta > 0) {
+                            Income::create([
+                                'date' => date('Y-m-d'),
+                                'amount' => $profitDelta,
+                                'remarks' => 'Profit from ' . $record->company_name,
+                            ]);
+                        }
+
+                        $record->returned_amount = $newReturned;
+
+                        $fullyRecovered = $newReturned >= $invested;
+                        $finalSettlement = (bool) ($data['final'] ?? false);
+
+                        if ($fullyRecovered) {
+                            $record->is_returned = true;
+                        } elseif ($finalSettlement) {
+                            // Write off the remaining principal as a loss.
+                            $loss = $invested - $newReturned;
+                            if ($loss > 0) {
+                                $lossCategory = \App\Models\ExpenseCategory::firstOrCreate(
+                                    ['name' => 'Investment Loss'],
+                                    ['parent' => 0, 'is_stats' => true]
+                                );
+
+                                Expense::create([
+                                    'date' => date('Y-m-d'),
+                                    'amount' => $loss,
+                                    'remarks' => 'Loss from Investment of ' . $record->company_name,
+                                    'category_id' => $lossCategory->id,
+                                ]);
+                            }
+                            $record->is_returned = true;
+                        }
+
                         $record->save();
+
+                        Notification::make()
+                            ->success()
+                            ->title($record->is_returned ? 'Investment closed' : 'Partial return recorded')
+                            ->send();
                     })->hidden(function ($record){
                         return $record->is_returned or $record->is_lifetime;
                     }),
