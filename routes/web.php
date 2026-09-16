@@ -39,3 +39,8 @@ Route::get('/invoices/{invoice}/download', [\App\Http\Controllers\InvoiceControl
 Route::get('/invoices/{invoice}/view', [\App\Http\Controllers\InvoiceController::class, 'view'])
     ->name('invoices.view')
     ->middleware('auth');
+
+// Public case studies
+Route::get('/case-studies/quick-annotation', function () {
+    return view('case-studies.quick-annotation');
+})->name('case-studies.quick-annotation');
