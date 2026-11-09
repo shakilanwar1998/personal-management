@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Investment extends Model
 {
@@ -18,35 +17,34 @@ class Investment extends Model
         'returned_amount',
         'is_lifetime',
         'return_date',
-        'is_returned'
+        'is_returned',
+        'notes',
     ];
 
     protected $casts = [
-        'date' => 'date',
-        'return_date' => 'date',
-        'amount' => 'decimal:2',
-        'returned_amount' => 'decimal:2',
+        'date' => 'date:Y-m-d',
+        'return_date' => 'date:Y-m-d',
+        'amount' => 'float',
+        'returned_amount' => 'float',
         'is_lifetime' => 'boolean',
         'is_returned' => 'boolean',
     ];
 
-    protected function amount(): Attribute
-    {
-        return Attribute::make(
-            get: fn (string $value) => number_format($value, 2),
-        );
-    }
+    protected $appends = ['outstanding', 'status', 'profit'];
 
-    /**
-     * Principal still tied up in the investment (never negative).
-     * Reads raw attributes so the formatted `amount` accessor doesn't interfere.
-     */
+    /** Principal still tied up in the investment (never negative). */
     public function getOutstandingAttribute(): float
     {
         return max(0, $this->rawAmount() - $this->rawReturnedAmount());
     }
 
-    public function getStatusAttribute()
+    /** Amount received above the invested principal. */
+    public function getProfitAttribute(): float
+    {
+        return max(0, $this->rawReturnedAmount() - $this->rawAmount());
+    }
+
+    public function getStatusAttribute(): string
     {
         if ($this->is_returned) {
             return 'Returned';
@@ -57,12 +55,10 @@ class Investment extends Model
         if ($this->rawReturnedAmount() > 0) {
             return 'Partially Returned';
         }
+
         return 'Active';
     }
 
-    /**
-     * Invested principal as a plain number (bypasses the number_format accessor).
-     */
     public function rawAmount(): float
     {
         return (float) ($this->attributes['amount'] ?? 0);

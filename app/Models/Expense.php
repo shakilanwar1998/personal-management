@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Expense extends Model
 {
@@ -13,13 +13,14 @@ class Expense extends Model
     protected $fillable = [
         'date',
         'category_id',
+        'recurring_bill_id',
         'amount',
-        'remarks'
+        'remarks',
     ];
 
     protected $casts = [
-        'date' => 'date',
-        'amount' => 'decimal:2',
+        'date' => 'date:Y-m-d',
+        'amount' => 'float',
     ];
 
     public function category()
@@ -27,10 +28,19 @@ class Expense extends Model
         return $this->belongsTo(ExpenseCategory::class, 'category_id', 'id');
     }
 
-    protected function amount(): Attribute
+    public function recurringBill()
     {
-        return Attribute::make(
-            get: fn (string $value) => number_format($value, 2),
-        );
+        return $this->belongsTo(RecurringBill::class);
+    }
+
+    public function scopeInYear(Builder $query, ?int $year): Builder
+    {
+        return $year ? $query->whereYear('date', $year) : $query;
+    }
+
+    /** Rows added to fill a recording gap are tagged "[ESTIMATED]" in remarks. */
+    public function getIsEstimatedAttribute(): bool
+    {
+        return str_starts_with((string) $this->remarks, '[ESTIMATED]');
     }
 }

@@ -1,0 +1,6 @@
+import{c,A as d,X as u}from"./app-DhF43afm.js";import{q as i,b as s,c as l,k as r,u as n,s as p,v as h,i as m,d as v,x as f}from"./runtime-dom.esm-bundler-eRQWhJR1.js";/**
+ * @license lucide-vue-next v1.0.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const V=c("chevrons-up-down",[["path",{d:"m7 15 5 5 5-5",key:"1hf1tw"}],["path",{d:"m7 9 5-5 5 5",key:"sgt6xg"}]]),y={class:"relative"},b=["placeholder"],g={__name:"SearchInput",props:f({placeholder:{type:String,default:"Search…"}},{modelValue:{type:String,default:""},modelModifiers:{}}),emits:["update:modelValue"],setup(a){const e=i(a,"modelValue");return(k,t)=>(s(),l("div",y,[r(n(d),{class:"pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"}),p(m("input",{"onUpdate:modelValue":t[0]||(t[0]=o=>e.value=o),type:"search",placeholder:a.placeholder,class:"input pl-9 pr-8 [&::-webkit-search-cancel-button]:hidden"},null,8,b),[[h,e.value]]),e.value?(s(),l("button",{key:0,type:"button",class:"absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-zinc-400 hover:text-zinc-600","aria-label":"Clear search",onClick:t[1]||(t[1]=o=>e.value="")},[r(n(u),{class:"h-3.5 w-3.5"})])):v("",!0)]))}};export{V as C,g as _};

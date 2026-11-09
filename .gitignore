@@ -3,3 +3,10 @@
 *.lock
 /vendor
 /node_modules
+
+# Local-only files
+api-key
+.phpunit.result.cache
+.DS_Store
+/*.jpg
+/*.png

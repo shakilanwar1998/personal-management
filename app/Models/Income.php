@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Income extends Model
 {
@@ -14,12 +14,16 @@ class Income extends Model
         'date',
         'amount',
         'income_source',
-        'remarks'
+        'remarks',
     ];
 
     protected $casts = [
-        'date' => 'date',
-        'amount' => 'decimal:2',
+        'date' => 'date:Y-m-d',
+        'amount' => 'float',
     ];
 
+    public function scopeInYear(Builder $query, ?int $year): Builder
+    {
+        return $year ? $query->whereYear('date', $year) : $query;
+    }
 }

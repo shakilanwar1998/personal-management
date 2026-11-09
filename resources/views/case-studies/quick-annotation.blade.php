@@ -169,7 +169,7 @@
         <span class="grid h-8 w-8 place-items-center rounded-md bg-ink font-mono text-[11px] font-semibold text-ground">SA</span>
         <span class="leading-tight">
           <span class="block text-sm font-semibold">Shakil Anwar</span>
-          <span class="block text-xs text-muted">Automation Expert</span>
+          <span class="block text-xs text-muted">Full-Stack Developer | Laravel & Node.js Architect | SaaS & E-Commerce Platforms | API & Marketplace Integration Specialist | Business Automation | AI-Driven Solutions</span>
         </span>
       </a>
       <nav class="hidden items-center gap-7 text-sm text-muted md:flex" aria-label="Sections">
@@ -180,6 +180,10 @@
         <a class="hover:text-ink" href="#services">Services</a>
       </nav>
       <div class="flex items-center gap-2">
+        <a href="/projects" class="inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border border-line px-3 text-sm font-medium text-muted hover:text-ink">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+          <span class="hidden sm:inline">All projects</span><span class="sm:hidden">Projects</span>
+        </a>
         <button id="themeToggle" type="button" class="grid h-9 w-9 place-items-center rounded-md border border-line text-muted hover:text-ink" aria-label="Switch colour theme">
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/></svg>
         </button>
@@ -1027,7 +1031,7 @@
     const SHEET = {
       Workflow: [
         ['tenant_name', 'Tenant A'],
-        ['tenant_asset_spec_token', '••••••••••••'],
+        ['tenant_catalog_token', '••••••••••••'],
         ['tenant_active', 'TRUE'],
         ['openai_api_key', '••••••••••••'],
         ['serper_api_key', '••••••••••••'],

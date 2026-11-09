@@ -38,13 +38,16 @@ class Invoice extends Model
         'tax_amount',
         'total',
         'status',
+        'paid_at',
+        'income_id',
         'notes',
         'terms',
     ];
 
     protected $casts = [
-        'invoice_date' => 'date',
-        'due_date' => 'date',
+        'invoice_date' => 'date:Y-m-d',
+        'due_date' => 'date:Y-m-d',
+        'paid_at' => 'date:Y-m-d',
         'subtotal' => 'decimal:2',
         'tax_rate' => 'decimal:2',
         'tax_amount' => 'decimal:2',
@@ -54,6 +57,13 @@ class Invoice extends Model
     public function items(): HasMany
     {
         return $this->hasMany(InvoiceItem::class)->orderBy('sort_order');
+    }
+
+    public const STATUSES = ['draft', 'sent', 'due', 'paid', 'overdue', 'cancelled'];
+
+    public function income()
+    {
+        return $this->belongsTo(Income::class);
     }
 
     public function calculateTotals(): void

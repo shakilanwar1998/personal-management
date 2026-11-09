@@ -4,22 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Http\Request;
 
 class InvoiceController extends Controller
 {
     public function download(Invoice $invoice)
     {
         $invoice->load('items');
-        
-        // Determine template based on client country
-        $template = match($invoice->client_country) {
-            'DE' => 'invoices.germany',
-            'US' => 'invoices.usa',
-            default => 'invoices.default',
-        };
 
-        $pdf = Pdf::loadView($template, [
+        $pdf = Pdf::loadView('invoices.invoice', [
             'invoice' => $invoice,
         ])->setPaper('a4', 'portrait');
 
@@ -29,15 +21,8 @@ class InvoiceController extends Controller
     public function view(Invoice $invoice)
     {
         $invoice->load('items');
-        
-        // Determine template based on client country
-        $template = match($invoice->client_country) {
-            'DE' => 'invoices.germany',
-            'US' => 'invoices.usa',
-            default => 'invoices.default',
-        };
 
-        return view($template, [
+        return view('invoices.invoice', [
             'invoice' => $invoice,
         ]);
     }

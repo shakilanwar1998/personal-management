@@ -15,21 +15,24 @@ class LendingTransaction extends Model
         'amount',
         'returned_amount',
         'due_date',
-        'is_returned'
+        'is_returned',
+        'notes',
     ];
 
     protected $casts = [
-        'date' => 'date',
-        'due_date' => 'date',
+        'date' => 'date:Y-m-d',
+        'due_date' => 'date:Y-m-d',
+        'amount' => 'float',
+        'returned_amount' => 'float',
         'is_returned' => 'boolean',
     ];
 
-    /**
-     * Amount still owed by the borrower.
-     */
+    protected $appends = ['outstanding', 'status', 'is_overdue'];
+
+    /** Amount still owed by the borrower. */
     public function getOutstandingAttribute(): float
     {
-        return max(0, (float) $this->amount - (float) $this->returned_amount);
+        return $this->is_returned ? 0.0 : max(0, (float) $this->amount - (float) $this->returned_amount);
     }
 
     public function getStatusAttribute(): string
@@ -40,6 +43,12 @@ class LendingTransaction extends Model
         if ((float) $this->returned_amount > 0) {
             return 'Partially Returned';
         }
+
         return 'Active';
+    }
+
+    public function getIsOverdueAttribute(): bool
+    {
+        return ! $this->is_returned && $this->due_date && $this->due_date->isPast() && ! $this->due_date->isToday();
     }
 }
