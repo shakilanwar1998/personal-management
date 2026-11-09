@@ -25,12 +25,14 @@ const props = defineProps({
     summary: Object,
     statuses: Array,
     countries: Object,
+    clients: { type: Array, default: () => [] },
 });
 
 const { filters, sortBy, reset } = useFilters({
     search: props.filters.search ?? '',
     status: props.filters.status ?? '',
     client_country: props.filters.client_country ?? '',
+    client: props.filters.client ?? '',
     year: props.filters.year ?? '',
     from: props.filters.from ?? '',
     to: props.filters.to ?? '',
@@ -46,7 +48,7 @@ const period = computed({
     get: () => (filters.year === '' ? 'all' : filters.year === selectedYear.value ? '' : filters.year),
     set: (v) => (filters.year = v === 'all' ? '' : v === '' ? selectedYear.value : v),
 });
-const hasFilters = computed(() => filters.search || filters.status || filters.client_country || filters.year);
+const hasFilters = computed(() => filters.search || filters.status || filters.client_country || filters.client || filters.year);
 
 const rows = computed(() => props.invoices.data);
 const { selected, allSelected, someSelected, toggleAll, clear } = useSelection(rows);
@@ -147,6 +149,10 @@ function submitPayment() {
             <select v-model="filters.status" class="input w-auto" aria-label="Status">
                 <option value="">All statuses</option>
                 <option v-for="s in statuses" :key="s" :value="s">{{ ucfirst(s) }}</option>
+            </select>
+            <select v-if="clients.length" v-model="filters.client" class="input w-auto max-w-[12rem]" aria-label="Client">
+                <option value="">All clients</option>
+                <option v-for="c in clients" :key="c.id" :value="String(c.id)">{{ c.name }}</option>
             </select>
             <select v-model="filters.client_country" class="input w-auto" aria-label="Country">
                 <option value="">All countries</option>

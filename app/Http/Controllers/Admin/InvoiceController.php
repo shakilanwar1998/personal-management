@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Client;
 use App\Models\Income;
 use App\Models\Invoice;
 use Illuminate\Database\Eloquent\Builder;
@@ -40,17 +41,19 @@ class InvoiceController extends AdminController
 
         return Inertia::render('Invoices/Index', [
             'invoices' => $invoices,
-            'filters' => $request->only(['search', 'status', 'client_country', 'year', 'from', 'to', 'sort', 'dir', 'per_page']),
+            'filters' => $request->only(['search', 'status', 'client_country', 'client', 'year', 'from', 'to', 'sort', 'dir', 'per_page']),
+            'clients' => Client::orderBy('name')->get(['id', 'name']),
             'summary' => $this->summary(),
             'statuses' => Invoice::STATUSES,
             'countries' => self::COUNTRIES,
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $last = Invoice::latest('id')->first();
         $business = $last ? $last->only(self::BUSINESS_FIELDS) : array_fill_keys(self::BUSINESS_FIELDS, null);
+        $client = ctype_digit((string) $request->input('client')) ? Client::find($request->input('client')) : null;
 
         return Inertia::render('Invoices/Form', [
             'invoice' => array_merge([
@@ -59,6 +62,7 @@ class InvoiceController extends AdminController
                 'invoice_date' => now()->toDateString(),
                 'due_date' => null,
                 'status' => 'draft',
+                'client_id' => null,
                 'currency' => 'USD',
                 'client_name' => '',
                 'client_email' => '',
@@ -72,7 +76,8 @@ class InvoiceController extends AdminController
                 'notes' => '',
                 'terms' => '',
                 'items' => [['description' => '', 'quantity' => 1, 'unit_price' => '', 'tax_rate' => 0]],
-            ], $business),
+            ], $business, $client ? $this->clientFill($client) : []),
+            'clients' => $this->clientOptions(),
             'statuses' => Invoice::STATUSES,
             'currencies' => self::CURRENCIES,
             'countries' => self::COUNTRIES,
@@ -86,6 +91,7 @@ class InvoiceController extends AdminController
         DB::transaction(function () use ($data) {
             $items = $data['items'];
             unset($data['items']);
+            $data = $this->syncClient($data);
             $invoice = Invoice::create($data + ['subtotal' => 0, 'tax_amount' => 0, 'total' => 0]);
             $this->saveItems($invoice, $items);
         });
@@ -107,6 +113,7 @@ class InvoiceController extends AdminController
                     'tax_rate' => (float) $i->tax_rate,
                 ])->values(),
             ]),
+            'clients' => $this->clientOptions(),
             'statuses' => Invoice::STATUSES,
             'currencies' => self::CURRENCIES,
             'countries' => self::COUNTRIES,
@@ -122,6 +129,7 @@ class InvoiceController extends AdminController
         DB::transaction(function () use ($invoice, $data) {
             $items = $data['items'];
             unset($data['items']);
+            $data = $this->syncClient($data);
             $invoice->update($data);
             $this->saveItems($invoice, $items);
         });
@@ -210,6 +218,48 @@ class InvoiceController extends AdminController
         return redirect()->route('admin.invoices.edit', $copy)->with('success', "Created {$copy->invoice_number} from {$invoice->invoice_number}.");
     }
 
+    /**
+     * Link the invoice to a client profile:
+     *  - picked client + update_client → the profile gets the details typed on the invoice
+     *  - no client + save_client       → a new profile is made (or an existing one with the same name is reused)
+     */
+    private function syncClient(array $data): array
+    {
+        $save = (bool) ($data['save_client'] ?? false);
+        $refresh = (bool) ($data['update_client'] ?? false);
+        unset($data['save_client'], $data['update_client']);
+
+        $attrs = Client::attributesFromInvoice($data);
+
+        if (! empty($data['client_id'])) {
+            if ($refresh) {
+                Client::whereKey($data['client_id'])->first()?->update($attrs);
+            }
+        } elseif ($save) {
+            $existing = Client::where('name', trim($data['client_name']))->first();
+            $data['client_id'] = $existing?->id ?? Client::create($attrs)->id;
+        }
+
+        return $data;
+    }
+
+    private function clientFill(Client $client): array
+    {
+        $fill = ['client_id' => $client->id, 'currency' => $client->currency ?: 'USD', 'tax_rate' => $client->country === 'DE' ? 19 : 0];
+        foreach (Client::INVOICE_FIELDS as $field => $column) {
+            $fill[$column] = $client->{$field} ?? '';
+        }
+
+        return $fill;
+    }
+
+    private function clientOptions(): array
+    {
+        return Client::orderBy('name')->get()->map(fn (Client $c) => $c->only([
+            'id', 'name', 'email', 'address', 'city', 'state', 'postal_code', 'country', 'tax_id', 'currency',
+        ]))->all();
+    }
+
     private function saveItems(Invoice $invoice, array $items): void
     {
         $invoice->items()->delete();
@@ -245,6 +295,10 @@ class InvoiceController extends AdminController
 
         if (in_array($request->input('status'), Invoice::STATUSES, true)) {
             $query->where('status', $request->input('status'));
+        }
+
+        if (ctype_digit((string) $request->input('client'))) {
+            $query->where('client_id', (int) $request->input('client'));
         }
 
         if (array_key_exists((string) $request->input('client_country'), self::COUNTRIES)) {
@@ -318,6 +372,9 @@ class InvoiceController extends AdminController
             'status' => ['required', Rule::in(Invoice::STATUSES)],
             'currency' => ['required', Rule::in(self::CURRENCIES)],
 
+            'client_id' => ['nullable', 'integer', Rule::exists('clients', 'id')],
+            'save_client' => ['boolean'],
+            'update_client' => ['boolean'],
             'client_name' => ['required', 'string', 'max:255'],
             'client_email' => ['nullable', 'email', 'max:255'],
             'client_address' => ['nullable', 'string', 'max:2000'],

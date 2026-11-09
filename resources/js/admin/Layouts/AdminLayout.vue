@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import {
     BarChart3, Banknote, CalendarClock, CalendarDays, Check, ChevronDown, FileText, Gauge, HandCoins, Landmark,
-    LayoutDashboard, LogOut, Menu, Moon, PiggyBank, Plus, Receipt, Settings, Sun, Tags, TrendingUp, X,
+    LayoutDashboard, LogOut, Menu, Moon, PiggyBank, Plus, Receipt, Settings, Sun, Tags, TrendingUp, Users, X,
 } from 'lucide-vue-next';
 import Dropdown from '../Components/Dropdown.vue';
 import Toasts from '../Components/Toasts.vue';
@@ -37,7 +37,10 @@ const nav = computed(() => [
         { label: 'Money Lent', href: '/admin/lending', icon: HandCoins },
         { label: 'Money Borrowed', href: '/admin/borrowing', icon: Landmark },
     ] },
-    { group: 'Business', items: [{ label: 'Invoices', href: '/admin/invoices', icon: FileText }] },
+    { group: 'Business', items: [
+        { label: 'Invoices', href: '/admin/invoices', icon: FileText },
+        { label: 'Clients', href: '/admin/clients', icon: Users },
+    ] },
     { group: 'Setup', items: [
         { label: 'Categories', href: '/admin/categories', icon: Tags },
         { label: 'Settings', href: '/admin/settings', icon: Settings },

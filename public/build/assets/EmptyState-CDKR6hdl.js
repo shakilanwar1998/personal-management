@@ -1,0 +1,6 @@
+import{c as a}from"./app-Cor-csDE.js";import{b as e,c as s,i as n,g as r,z as l,t as o,d as i,r as d}from"./runtime-dom.esm-bundler-eRQWhJR1.js";/**
+ * @license lucide-vue-next v1.0.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const m=a("inbox",[["polyline",{points:"22 12 16 12 14 15 10 15 8 12 2 12",key:"o97t9d"}],["path",{d:"M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z",key:"oot6mr"}]]),x={class:"flex flex-col items-center justify-center px-6 py-14 text-center"},p={class:"mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500"},u={class:"text-sm font-semibold text-zinc-900 dark:text-zinc-100"},y={key:0,class:"mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400"},f={key:1,class:"mt-4"},_={__name:"EmptyState",props:{title:{type:String,default:"Nothing here yet"},description:{type:String,default:""},icon:{type:[Object,Function],default:()=>m}},setup(t){return(c,h)=>(e(),s("div",x,[n("div",p,[(e(),r(l(t.icon),{class:"h-5 w-5"}))]),n("h3",u,o(t.title),1),t.description?(e(),s("p",y,o(t.description),1)):i("",!0),c.$slots.default?(e(),s("div",f,[d(c.$slots,"default")])):i("",!0)]))}};export{_};

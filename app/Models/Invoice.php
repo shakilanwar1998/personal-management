@@ -14,6 +14,7 @@ class Invoice extends Model
         'invoice_number',
         'invoice_date',
         'due_date',
+        'client_id',
         'client_name',
         'client_address',
         'client_city',
@@ -60,6 +61,11 @@ class Invoice extends Model
     }
 
     public const STATUSES = ['draft', 'sent', 'due', 'paid', 'overdue', 'cancelled'];
+
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
+    }
 
     public function income()
     {

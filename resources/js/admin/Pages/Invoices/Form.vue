@@ -9,6 +9,7 @@ import { confirm } from '../../composables/useConfirm';
 
 const props = defineProps({
     invoice: Object,
+    clients: { type: Array, default: () => [] },
     statuses: Array,
     currencies: Array,
     countries: Object,
@@ -28,6 +29,9 @@ const fields = [
 const initial = Object.fromEntries(fields.map((f) => [f, props.invoice[f] ?? '']));
 initial.tax_rate = Number(props.invoice.tax_rate ?? 0);
 initial.items = (props.invoice.items?.length ? props.invoice.items : [{}]).map(withKey);
+initial.client_id = props.invoice.client_id ?? null;
+initial.save_client = !isEdit.value;
+initial.update_client = false;
 
 const form = useForm(initial);
 
@@ -47,6 +51,27 @@ const lineTotal = (item) => (Number(item.quantity) || 0) * (Number(item.unit_pri
 const subtotal = computed(() => form.items.reduce((s, i) => s + lineTotal(i), 0));
 const taxAmount = computed(() => subtotal.value * ((Number(form.tax_rate) || 0) / 100));
 const total = computed(() => subtotal.value + taxAmount.value);
+
+// Client profiles: picking one fills the client fields.
+const clientFields = { name: 'client_name', email: 'client_email', address: 'client_address', city: 'client_city', state: 'client_state', postal_code: 'client_postal_code', country: 'client_country', tax_id: 'client_tax_id' };
+const selectedClient = computed(() => props.clients.find((c) => c.id === form.client_id) ?? null);
+
+function onClientChange() {
+    const c = selectedClient.value;
+    form.update_client = false;
+    Object.entries(clientFields).forEach(([field, column]) => {
+        form[column] = c ? c[field] ?? '' : column === 'client_country' ? 'US' : '';
+    });
+    onCountryChange();
+    if (c?.currency) form.currency = c.currency;
+}
+
+// True when the typed client details no longer match the picked profile.
+const clientChanged = computed(() => {
+    const c = selectedClient.value;
+    if (!c) return false;
+    return Object.entries(clientFields).some(([field, column]) => (c[field] ?? '') !== (form[column] ?? ''));
+});
 
 // Same behaviour as before: picking the client country sets tax rate and currency.
 function onCountryChange() {
@@ -146,8 +171,18 @@ const ucfirst = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
         <!-- Client -->
         <section class="card">
-            <div class="card-header"><h2 class="card-title">Client</h2></div>
+            <div class="card-header">
+                <h2 class="card-title">Client</h2>
+                <Link href="/admin/clients" class="text-xs text-zinc-500 hover:text-zinc-900 hover:underline dark:hover:text-zinc-100">Manage clients</Link>
+            </div>
             <div class="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
+                <Field label="Client profile" :error="err('client_id')" class="sm:col-span-2 lg:col-span-3" for="c-profile"
+                    :hint="selectedClient ? 'Details below come from this profile. You can still change them for this invoice.' : 'Pick a saved client, or type a new one below.'">
+                    <select id="c-profile" v-model="form.client_id" class="input" @change="onClientChange">
+                        <option :value="null">+ New client</option>
+                        <option v-for="c in clients" :key="c.id" :value="c.id">{{ c.name }}{{ c.email ? ` · ${c.email}` : '' }}</option>
+                    </select>
+                </Field>
                 <Field label="Client name" :error="err('client_name')" required for="c-name">
                     <input id="c-name" v-model="form.client_name" type="text" class="input" :class="{ 'input-error': err('client_name') }" />
                 </Field>
@@ -174,6 +209,16 @@ const ucfirst = (s) => s.charAt(0).toUpperCase() + s.slice(1);
                 <Field label="Client tax ID / VAT number" :error="err('client_tax_id')" for="c-tax">
                     <input id="c-tax" v-model="form.client_tax_id" type="text" class="input" />
                 </Field>
+                <label v-if="!form.client_id" class="flex items-start gap-2.5 text-sm sm:col-span-2 lg:col-span-3">
+                    <input v-model="form.save_client" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-zinc-300 text-brand-600" />
+                    <span><span class="font-medium text-zinc-800 dark:text-zinc-200">Save as a client profile</span>
+                        <span class="block text-xs text-zinc-500">Next time, pick this client from the list instead of typing.</span></span>
+                </label>
+                <label v-else-if="clientChanged" class="flex items-start gap-2.5 text-sm sm:col-span-2 lg:col-span-3">
+                    <input v-model="form.update_client" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-zinc-300 text-brand-600" />
+                    <span><span class="font-medium text-zinc-800 dark:text-zinc-200">Also update {{ selectedClient.name }}'s profile</span>
+                        <span class="block text-xs text-zinc-500">Otherwise the changes apply to this invoice only.</span></span>
+                </label>
             </div>
         </section>
 

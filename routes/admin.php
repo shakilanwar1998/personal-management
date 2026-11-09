@@ -63,6 +63,7 @@ Route::middleware('auth')->name('admin.')->group(function () {
     Route::resource('borrowing', Admin\BorrowingController::class)->only(['index', 'store', 'update', 'destroy']);
 
     // Business
+    Route::resource('clients', Admin\ClientController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::post('invoices/{invoice}/payment', [Admin\InvoiceController::class, 'recordPayment'])->name('invoices.payment');
     Route::post('invoices/{invoice}/duplicate', [Admin\InvoiceController::class, 'duplicate'])->name('invoices.duplicate');
     Route::post('invoices/bulk-delete', [Admin\InvoiceController::class, 'bulkDestroy'])->name('invoices.bulk-delete');
